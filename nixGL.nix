@@ -135,11 +135,20 @@ in
     in ''
       #!/usr/bin/env sh
       export LIBGL_DRIVERS_PATH=${lib.makeSearchPathOutput "lib" "lib/dri" drivers}
-      export LD_LIBRARY_PATH=${
-        lib.makeLibraryPath drivers
-      }:$LD_LIBRARY_PATH
+      export LD_LIBRARY_PATH=${lib.makeLibraryPath drivers}:$LD_LIBRARY_PATH
       "$@"
     '';
+  };
+  # TODO: Figure out a with thing?
+  wrappers = {
+    nixGLIntel = wrappedPkg: wrappedExe: stdenv.mkDerivation {
+      buildInputs = [ wrappedPackage ];
+      installPhase = ''
+        wrapProgram ${wrappedPkg}/${wrappedExe} \
+          --set LIBGL_DRIVERS_PATH ${lib.makeSearchPathOutput "lib" "lib/dri" drivers}
+          --prefix LD_LIBRARY_PATH ${lib.makeLibraryPath drivers}
+      '';
+    };
   };
 
   nixVulkanIntel = writeExecutable {
